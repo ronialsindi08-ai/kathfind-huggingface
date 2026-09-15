@@ -6,11 +6,7 @@ from pathlib import Path
 from datetime import date
 import uuid
 
-# --------------------------------------------------
-
 # Einstellungen
-
-# --------------------------------------------------
 
 st.set_page_config(
 page_title="Fundkiste",
@@ -40,11 +36,7 @@ KATEGORIEN = [
 "Sonstiges"
 ]
 
-# --------------------------------------------------
-
 # Hugging-Face-KI
-
-# --------------------------------------------------
 
 @st.cache_resource
 def lade_ki():
@@ -96,11 +88,7 @@ sicherheit = bestes_ergebnis["score"] * 100
 return kategorie, sicherheit
 ```
 
-# --------------------------------------------------
-
-# Daten laden und speichern
-
-# --------------------------------------------------
+# Daten
 
 def lade_fundstuecke():
 if not DATA_FILE.exists():
@@ -144,24 +132,18 @@ index=False,
 encoding="utf-8"
 )
 
-# --------------------------------------------------
-
-# Seiten-Navigation
-
-# --------------------------------------------------
+# Navigation
 
 if "seite" not in st.session_state:
 st.session_state.seite = "start"
 
-# --------------------------------------------------
+if "ki_kategorie" not in st.session_state:
+st.session_state.ki_kategorie = "Sonstiges"
 
 # Design
 
-# --------------------------------------------------
-
 st.markdown(
-"""
-<style>
+""" <style>
 .stApp {
 background-color: #f5f0df;
 }
@@ -184,7 +166,6 @@ h1, h2, h3, p, label {
     font-size: 18px;
     font-weight: 600;
     letter-spacing: 2px;
-    margin-bottom: 0px;
 }
 
 .jahr {
@@ -206,13 +187,8 @@ div.stButton > button {
     border: 2px solid #111111;
     background-color: #d7e85b;
     color: #111111;
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 600;
-}
-
-div.stButton > button:hover {
-    border-color: #111111;
-    color: #111111;
 }
 
 .fundstueck {
@@ -229,11 +205,7 @@ unsafe_allow_html=True
 
 )
 
-# --------------------------------------------------
-
 # Startseite
-
-# --------------------------------------------------
 
 if st.session_state.seite == "start":
 
@@ -275,11 +247,7 @@ with col2:
         st.rerun()
 ```
 
-# --------------------------------------------------
-
-# Suchseite
-
-# --------------------------------------------------
+# Suche
 
 elif st.session_state.seite == "suchen":
 
@@ -287,20 +255,17 @@ elif st.session_state.seite == "suchen":
 if st.button("← Zurück"):
     st.session_state.seite = "start"
     st.rerun()
-skdvjwhgabkpgpamdhn9zg
+
 st.title("🔎 Fundstücke suchen")
 
 st.write(
-    "Suche nach einem Gegenstand. "
-    "Du kannst auch nur ein Feld ausfüllen."
+    "Suche nach einem verlorenen Gegenstand."
 )
 
 df = lade_fundstuecke()
 
-if not df.empty:
-    if "erledigt" in df.columns:
-        df["erledigt"] = df["erledigt"].astype(str)
-
+if not df.empty and "erledigt" in df.columns:
+    df["erledigt"] = df["erledigt"].astype(str)
     df = df[
         df["erledigt"].str.lower() != "true"
     ]
@@ -310,7 +275,7 @@ col1, col2 = st.columns(2)
 with col1:
     suche_gegenstand = st.text_input(
         "Gegenstand",
-        placeholder="z. B. schwarzer Rucksack"
+        placeholder="z. B. Rucksack"
     )
 
     suche_farbe = st.text_input(
@@ -329,14 +294,7 @@ with col2:
         placeholder="z. B. Sporthalle"
     )
 
-st.write("")
-
-suchen = st.button(
-    "🔎 Suchen",
-    type="primary"
-)
-
-if suchen:
+if st.button("🔎 Suchen", type="primary"):
 
     if df.empty:
         st.info(
@@ -437,14 +395,14 @@ if suchen:
                     f"**Farbe:** "
                     f"{fundstueck.get('farbe', '-')}"
                 )
-skdvjwhgabkpgpamdhn9zg
+
                 st.write(
                     f"**Fundort:** "
                     f"{fundstueck.get('fundort', '-')}"
                 )
 
                 st.write(
-                    f"**Datum:** "
+                    f"**Funddatum:** "
                     f"{fundstueck.get('datum', '-')}"
                 )
 
@@ -473,7 +431,7 @@ skdvjwhgabkpgpamdhn9zg
                 ):
 
                     df_alle = lade_fundstuecke()
-skdvjwhgabkpgpamdhn9zg
+
                     df_alle.loc[
                         df_alle["id"].astype(str)
                         == str(fundstueck["id"]),
@@ -489,11 +447,7 @@ skdvjwhgabkpgpamdhn9zg
                     st.rerun()
 ```
 
-# --------------------------------------------------
-
 # Fundstück eingeben
-
-# --------------------------------------------------
 
 elif st.session_state.seite == "eingeben":
 
@@ -524,12 +478,10 @@ if bild is not None:
         use_container_width=True
     )
 
-    if st.button(
-        "🤖 Bild mit KI erkennen"
-    ):
+    if st.button("🤖 Bild mit KI erkennen"):
 
         with st.spinner(
-            "Die KI versucht den Gegenstand zu erkennen ..."
+            "Die KI schaut sich das Bild an ..."
         ):
 
             try:
@@ -538,7 +490,6 @@ if bild is not None:
                 )
 
                 st.session_state.ki_kategorie = kategorie
-                st.session_state.ki_sicherheit = sicherheit
 
                 st.success(
                     f"Die KI schlägt **{kategorie}** vor."
@@ -549,10 +500,15 @@ if bild is not None:
                     f"**{sicherheit:.1f} %**"
                 )
 
-            except Exception:
+            except Exception as fehler:
+
                 st.error(
-                    "Die Bilderkennung konnte nicht ausgeführt werden. "
-                    "Du kannst die Kategorie einfach selbst auswählen."
+                    "Die Bilderkennung konnte nicht "
+                    "ausgeführt werden."
+                )
+
+                st.write(
+                    f"Technischer Fehler: {fehler}"
                 )
 
 st.divider()
@@ -562,9 +518,8 @@ gegenstand = st.text_input(
     placeholder="z. B. schwarzer Rucksack"
 )
 
-vorgeschlagene_kategorie = st.session_state.get(
-    "ki_kategorie",
-    "Sonstiges"
+vorgeschlagene_kategorie = (
+    st.session_state.ki_kategorie
 )
 
 if vorgeschlagene_kategorie not in KATEGORIEN:
@@ -596,19 +551,14 @@ datum = st.date_input(
 beschreibung = st.text_area(
     "Beschreibung",
     placeholder=(
-        "Weitere Informationen, die helfen können, "
-        "den Gegenstand zu erkennen."
+        "Weitere Informationen zum Fundstück."
     )
 )
 
-st.write("")
-
-speichern = st.button(
+if st.button(
     "💾 Fundstück speichern",
     type="primary"
-)
-
-if speichern:
+):
 
     if not gegenstand.strip():
         st.error(
@@ -672,19 +622,17 @@ if speichern:
 
         speichere_fundstuecke(df)
 
+        st.session_state.ki_kategorie = "Sonstiges"
+
         st.success(
-            "✅ Das Fundstück wurde erfolgreich gespeichert!"
+            "✅ Das Fundstück wurde gespeichert!"
         )
 
         st.info(
             "Andere können es jetzt über die Suche finden."
         )
 
-        st.session_state.ki_kategorie = "Sonstiges"
-
-        if st.button(
-            "🔎 Zur Suche"
-        ):
+        if st.button("🔎 Zur Suche"):
             st.session_state.seite = "suchen"
             st.rerun()
 ```
